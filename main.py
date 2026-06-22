@@ -33,6 +33,8 @@ app.add_middleware(
 def get_db_connection():
     # Use the single connection string from env
     DATABASE_URL = os.getenv("DATABASE_URL")
+    if not DATABASE_URL:
+        raise Exception("DATABASE_URL environment variable is not set")
     return psycopg2.connect(DATABASE_URL, cursor_factory=RealDictCursor)
 
 # Pagination helpers
