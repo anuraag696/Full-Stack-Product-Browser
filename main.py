@@ -16,17 +16,6 @@ import logging
 # Set up logging to show up in Render
 logger = logging.getLogger("uvicorn")
 
-@app.get("/api/products")
-async def get_products():
-    try:
-        # Your current database connection/query logic here
-        # Example: results = db.query(Product).all()
-        # return results
-        return {"message": "Success!"} # Temporary placeholder
-    except Exception as e:
-        logger.error("FULL TRACEBACK BELOW")
-        logger.error(traceback.format_exc()) # This forces the full error into the logs
-        raise HTTPException(status_code=500, detail="Check logs for details")
 
 load_dotenv()
 
@@ -40,6 +29,17 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+@app.get("/api/products")
+async def get_products():
+    try:
+        # Your current database connection/query logic here
+        # Example: results = db.query(Product).all()
+        # return results
+        return {"message": "Success!"} # Temporary placeholder
+    except Exception as e:
+        logger.error("FULL TRACEBACK BELOW")
+        logger.error(traceback.format_exc()) # This forces the full error into the logs
+        raise HTTPException(status_code=500, detail="Check logs for details")
 
 # Updated database connection using direct parameters over connection pooler proxy port
 def get_db_connection():
