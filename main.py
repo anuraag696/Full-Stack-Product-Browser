@@ -23,14 +23,7 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
-# Mount your CORS middleware to let your index.html fetch data
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=["*"], 
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
-)
+
 # Updated database connection using direct parameters over connection pooler proxy port
 def get_db_connection():
     return psycopg2.connect(
