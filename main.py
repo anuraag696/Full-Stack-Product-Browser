@@ -31,14 +31,9 @@ app.add_middleware(
 
 # Database connection
 def get_db_connection():
-    return psycopg2.connect(
-        host=os.getenv("DB_HOST"),
-        port=os.getenv("DB_PORT", "5432"),
-        database=os.getenv("DB_NAME"),
-        user=os.getenv("DB_USER"),
-        password=os.getenv("DB_PASSWORD"),
-        cursor_factory=RealDictCursor
-    )
+    # Use the single connection string from env
+    DATABASE_URL = os.getenv("DATABASE_URL")
+    return psycopg2.connect(DATABASE_URL, cursor_factory=RealDictCursor)
 
 # Pagination helpers
 def encode_cursor(created_at: str, item_id: int) -> str:
