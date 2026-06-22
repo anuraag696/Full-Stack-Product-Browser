@@ -30,7 +30,8 @@ app.add_middleware(
     allow_headers=["*"],
 )
 @app.get("/api/products")
-async def get_products():
+async def get_products(limit: int = 24, category: str = None):
+    # Your database logic here
     return {"message": "Success!"}
 
 # Updated database connection using direct parameters over connection pooler proxy port
