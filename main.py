@@ -18,7 +18,7 @@ app = FastAPI(title="Fast Product Browser API")
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["https://anuraag696.github.io/Full-Stack-Product-Browser/"], # Replace with your actual GitHub Pages URL
+    allow_origins=["https://anuraag696.github.io"], # Replace with your actual GitHub Pages URL
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
