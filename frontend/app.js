@@ -1,4 +1,4 @@
-const API_BASE_URL = 'http://127.0.0.1:8000/api/products';
+const API_BASE_URL = 'https://full-stack-product-browser.onrender.com/api/products';
 const LIMIT = 24; // Fetching clean multiples of 4 for a perfect grid layout
 
 let nextCursor = null;
@@ -45,15 +45,15 @@ async function fetchProducts(resetGrid = false) {
 
         const response = await fetch(url);
         if (!response.ok) throw new Error('Network response failed.');
-        
+
         const result = await response.json();
-        
+
         // Render current page batch
         renderProducts(result.data);
-        
+
         // Track the cursor for the next batch segment
         nextCursor = result.next_cursor;
-        
+
         // Toggle interface states based on payload presence
         if (result.has_more && nextCursor) {
             loadMoreBtn.classList.remove('hidden');
@@ -87,7 +87,7 @@ function renderProducts(products) {
 
         const card = document.createElement('div');
         card.className = 'bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden hover:shadow-md transition duration-200 flex flex-col justify-between';
-        
+
         card.innerHTML = `
             <div class="p-5">
                 <div class="flex justify-between items-start gap-2 mb-2">
@@ -124,7 +124,7 @@ function openModal(product, dateStr, priceStr) {
 
     // Reveal container layout overlay frame
     detailsModal.classList.remove('hidden');
-    
+
     // Tiny timeout enables the browser to catch CSS animation entry frames smoothly
     setTimeout(() => {
         modalContent.classList.remove('scale-95', 'opacity-0');
@@ -136,7 +136,7 @@ function openModal(product, dateStr, priceStr) {
 function closeModal() {
     modalContent.classList.remove('scale-100', 'opacity-100');
     modalContent.classList.add('scale-95', 'opacity-0');
-    
+
     // Hide structure out of visibility index entirely after transition completes
     setTimeout(() => {
         detailsModal.classList.add('hidden');

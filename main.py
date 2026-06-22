@@ -9,12 +9,20 @@ import psycopg2
 from psycopg2.extras import RealDictCursor
 import os
 from dotenv import load_dotenv
+from fastapi.middleware.cors import CORSMiddleware
 
 load_dotenv()
 
 # Initialize your single app instance safely
 app = FastAPI(title="Fast Product Browser API")
 
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["https://anuraag696.github.io/Full-Stack-Product-Browser/"], # Replace with your actual GitHub Pages URL
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 # Mount your CORS middleware to let your index.html fetch data
 app.add_middleware(
     CORSMiddleware,
