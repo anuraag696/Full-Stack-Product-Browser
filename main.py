@@ -31,11 +31,9 @@ app.add_middleware(
 
 # Database connection
 def get_db_connection():
-    # Use the single connection string from env
     DATABASE_URL = os.getenv("DATABASE_URL")
-    if not DATABASE_URL:
-        raise Exception("DATABASE_URL environment variable is not set")
-    return psycopg2.connect(DATABASE_URL, cursor_factory=RealDictCursor)
+    # Adding 'options' disables prepared statements, which are incompatible with the pooler
+    return psycopg2.connect(DATABASE_URL, cursor_factory=RealDictCursor, options="-c statement_timeout=30000")
 
 # Pagination helpers
 def encode_cursor(created_at: str, item_id: int) -> str:
