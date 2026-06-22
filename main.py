@@ -10,6 +10,23 @@ from psycopg2.extras import RealDictCursor
 import os
 from dotenv import load_dotenv
 from fastapi.middleware.cors import CORSMiddleware
+import traceback
+import logging
+
+# Set up logging to show up in Render
+logger = logging.getLogger("uvicorn")
+
+@app.get("/api/products")
+async def get_products():
+    try:
+        # Your current database connection/query logic here
+        # Example: results = db.query(Product).all()
+        # return results
+        return {"message": "Success!"} # Temporary placeholder
+    except Exception as e:
+        logger.error("FULL TRACEBACK BELOW")
+        logger.error(traceback.format_exc()) # This forces the full error into the logs
+        raise HTTPException(status_code=500, detail="Check logs for details")
 
 load_dotenv()
 
