@@ -43,10 +43,38 @@ async function fetchProducts(resetGrid = false) {
             url += `&cursor=${encodeURIComponent(nextCursor)}`;
         }
 
-        const response = await fetch(url);
-        if (!response.ok) throw new Error('Network response failed.');
+        let response;
+        try {
+            response = await fetch(url);
+        } catch (networkError) {
+            throw new Error(
+                'Network error: Unable to reach the backend API. Check your connection or ensure the server is running.'
+            );
+        }
 
-        const result = await response.json();
+        if (!response.ok) {
+            let errorDetail = `HTTP ${response.status}`;
+            try {
+                const errorBody = await response.json();
+                if (errorBody.detail) {
+                    errorDetail += `: ${errorBody.detail}`;
+                }
+            } catch (_) {
+                errorDetail += `: ${response.statusText || 'Unknown error'}`;
+            }
+            throw new Error(errorDetail);
+        }
+
+        let result;
+        try {
+            result = await response.json();
+        } catch (parseError) {
+            throw new Error('Failed to parse server response. The API returned invalid JSON.');
+        }
+
+        if (!result.data || !Array.isArray(result.data)) {
+            throw new Error('Unexpected API response format: missing or invalid "data" field.');
+        }
 
         // Render current page batch
         renderProducts(result.data);
@@ -59,7 +87,7 @@ async function fetchProducts(resetGrid = false) {
             loadMoreBtn.classList.remove('hidden');
         } else if (result.data.length > 0) {
             noMoreContainer.classList.remove('hidden');
-        } else {
+        } else if (resetGrid) {
             productGrid.innerHTML = `
                 <div class="col-span-full text-center py-12 text-gray-400 italic">
                     No products found matching this filter combo.
@@ -67,12 +95,17 @@ async function fetchProducts(resetGrid = false) {
             `;
         }
     } catch (error) {
-        console.error('Error fetching data:', error);
+        console.error('Product fetch failed:', error);
+        const errorMessage = error.message || 'An unexpected error occurred.';
         productGrid.innerHTML += `
             <div class="col-span-full text-center py-4 text-red-500 font-medium">
-                Failed to communicate with local backend API. Ensure Uvicorn is running.
+                ${errorMessage}
             </div>
         `;
+        // Keep the Load More button visible for retry if this was a pagination fetch
+        if (!resetGrid && nextCursor) {
+            loadMoreBtn.classList.remove('hidden');
+        }
     } finally {
         loadingSpinner.classList.add('hidden');
     }
