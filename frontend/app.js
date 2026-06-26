@@ -1,5 +1,5 @@
 const API_BASE_URL = 'https://full-stack-product-browser.onrender.com/api/products';
-const LIMIT = 24; // Fetching clean multiples of 4 for a perfect grid layout
+const LIMIT = 24;
 
 let nextCursor = null;
 let currentCategory = '';
@@ -16,49 +16,38 @@ const detailsModal = document.getElementById('detailsModal');
 const modalContent = document.getElementById('modalContent');
 const closeModalBtn = document.getElementById('closeModalBtn');
 
-// Helper to structure currency display format cleanly
-const formatPrice = (price) => {
-    return new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR' }).format(price);
-};
-
 // Fetch products from backend API
 async function fetchProducts(resetGrid = false) {
     if (resetGrid) {
         productGrid.innerHTML = '';
         nextCursor = null;
-        loadMoreBtn.classList.add('hidden');
-        noMoreContainer.classList.add('hidden');
+        setVisible(loadMoreBtn, false);
+        setVisible(noMoreContainer, false);
     }
 
-    loadingSpinner.classList.remove('hidden');
-    loadMoreBtn.classList.add('hidden');
+    setVisible(loadingSpinner, true);
+    setVisible(loadMoreBtn, false);
 
     try {
-        // Build dynamic query parameters
-        let url = `${API_BASE_URL}?limit=${LIMIT}`;
-        if (currentCategory) {
-            url += `&category=${encodeURIComponent(currentCategory)}`;
-        }
-        if (nextCursor) {
-            url += `&cursor=${encodeURIComponent(nextCursor)}`;
-        }
+        const url = buildApiUrl(API_BASE_URL, {
+            limit: LIMIT,
+            category: currentCategory,
+            cursor: nextCursor
+        });
 
         const response = await fetch(url);
         if (!response.ok) throw new Error('Network response failed.');
 
         const result = await response.json();
 
-        // Render current page batch
         renderProducts(result.data);
 
-        // Track the cursor for the next batch segment
         nextCursor = result.next_cursor;
 
-        // Toggle interface states based on payload presence
         if (result.has_more && nextCursor) {
-            loadMoreBtn.classList.remove('hidden');
+            setVisible(loadMoreBtn, true);
         } else if (result.data.length > 0) {
-            noMoreContainer.classList.remove('hidden');
+            setVisible(noMoreContainer, true);
         } else {
             productGrid.innerHTML = `
                 <div class="col-span-full text-center py-12 text-gray-400 italic">
@@ -74,15 +63,14 @@ async function fetchProducts(resetGrid = false) {
             </div>
         `;
     } finally {
-        loadingSpinner.classList.add('hidden');
+        setVisible(loadingSpinner, false);
     }
 }
 
-// Render products into clean grid elements dynamically
+// Render products into grid
 function renderProducts(products) {
     products.forEach(product => {
-        const dateObj = new Date(product.created_at);
-        const formattedDate = dateObj.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+        const formattedDate = formatDate(product.created_at);
         const pricingString = formatPrice(product.price);
 
         const card = document.createElement('div');
@@ -105,7 +93,6 @@ function renderProducts(products) {
             </div>
         `;
 
-        // Direct event attachment ensures each distinct card points to its metadata scope
         card.querySelector('.view-details-btn').addEventListener('click', () => {
             openModal(product, formattedDate, pricingString);
         });
@@ -114,7 +101,7 @@ function renderProducts(products) {
     });
 }
 
-// Open active modal window with subtle scale & opacity ease transition
+// Open modal with product details
 function openModal(product, dateStr, priceStr) {
     document.getElementById('modalCategory').innerText = product.category;
     document.getElementById('modalName').innerText = product.name;
@@ -122,28 +109,23 @@ function openModal(product, dateStr, priceStr) {
     document.getElementById('modalDate').innerText = dateStr;
     document.getElementById('modalPrice').innerText = priceStr;
 
-    // Reveal container layout overlay frame
-    detailsModal.classList.remove('hidden');
+    setVisible(detailsModal, true);
 
-    // Tiny timeout enables the browser to catch CSS animation entry frames smoothly
     setTimeout(() => {
-        modalContent.classList.remove('scale-95', 'opacity-0');
-        modalContent.classList.add('scale-100', 'opacity-100');
+        setModalAnimationState(modalContent, true);
     }, 20);
 }
 
-// Smoothly retract active modal elements 
+// Close modal with animation
 function closeModal() {
-    modalContent.classList.remove('scale-100', 'opacity-100');
-    modalContent.classList.add('scale-95', 'opacity-0');
+    setModalAnimationState(modalContent, false);
 
-    // Hide structure out of visibility index entirely after transition completes
     setTimeout(() => {
-        detailsModal.classList.add('hidden');
+        setVisible(detailsModal, false);
     }, 150);
 }
 
-// Global Interaction Triggers
+// Event listeners
 loadMoreBtn.addEventListener('click', () => fetchProducts(false));
 
 categoryFilter.addEventListener('change', (e) => {
@@ -153,10 +135,9 @@ categoryFilter.addEventListener('change', (e) => {
 
 closeModalBtn.addEventListener('click', closeModal);
 
-// Clicking anywhere on the blurred backdrop background closes it down too
 detailsModal.addEventListener('click', (e) => {
     if (e.target === detailsModal) closeModal();
 });
 
-// App Initialization entrypoint
+// App initialization
 fetchProducts(true);
