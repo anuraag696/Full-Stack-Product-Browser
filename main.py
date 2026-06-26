@@ -18,15 +18,20 @@ load_dotenv()
 # Setup logging
 logger = logging.getLogger("uvicorn")
 
-app = FastAPI(title="Fast Product Browser API")
+app = FastAPI(
+    title="Fast Product Browser API",
+    docs_url=None,
+    redoc_url=None,
+    openapi_url=None,
+)
 
 # Single, clean CORS configuration
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["https://anuraag696.github.io"],
     allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
+    allow_methods=["GET"],
+    allow_headers=["Content-Type", "Accept"],
 )
 
 # Database connection
@@ -66,7 +71,7 @@ class PaginatedProducts(BaseModel):
 @app.get("/api/products", response_model=PaginatedProducts)
 def get_products(
     category: Optional[str] = None,
-    limit: int = Query(default=20, le=100),
+    limit: int = Query(default=20, ge=1, le=100),
     cursor: Optional[str] = None
 ):
     try:

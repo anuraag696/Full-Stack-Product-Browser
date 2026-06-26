@@ -91,19 +91,23 @@ function renderProducts(products) {
         card.innerHTML = `
             <div class="p-5">
                 <div class="flex justify-between items-start gap-2 mb-2">
-                    <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-50 text-blue-800">
-                        ${product.category}
-                    </span>
-                    <span class="text-xs text-gray-400 font-mono">#${product.id}</span>
+                    <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-50 text-blue-800 card-category"></span>
+                    <span class="text-xs text-gray-400 font-mono card-id"></span>
                 </div>
-                <h3 class="font-semibold text-gray-800 text-base mb-1 line-clamp-2">${product.name}</h3>
-                <p class="text-xs text-gray-400">Added ${formattedDate}</p>
+                <h3 class="font-semibold text-gray-800 text-base mb-1 line-clamp-2 card-name"></h3>
+                <p class="text-xs text-gray-400 card-date"></p>
             </div>
             <div class="px-5 py-4 bg-gray-50 border-t border-gray-100 flex items-center justify-between">
-                <span class="text-lg font-bold text-gray-900">${pricingString}</span>
+                <span class="text-lg font-bold text-gray-900 card-price"></span>
                 <button class="view-details-btn text-xs font-medium text-blue-600 hover:text-blue-700 transition">View Details &rarr;</button>
             </div>
         `;
+
+        card.querySelector('.card-category').textContent = product.category;
+        card.querySelector('.card-id').textContent = `#${product.id}`;
+        card.querySelector('.card-name').textContent = product.name;
+        card.querySelector('.card-date').textContent = `Added ${formattedDate}`;
+        card.querySelector('.card-price').textContent = pricingString;
 
         // Direct event attachment ensures each distinct card points to its metadata scope
         card.querySelector('.view-details-btn').addEventListener('click', () => {

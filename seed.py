@@ -28,9 +28,11 @@ def generate_mock_products(count=200000):
 def seed_database():
     products = generate_mock_products(200000)
     
-    # Direct IPv6 endpoint matching your hotspot, using the transaction port
-    DB_URI = "postgresql://postgres:Anuraag%402004@db.iilajlduyjyeibazlyl.supabase.co:6543/postgres"
-    
+    DB_URI = os.getenv("DATABASE_URL")
+    if not DB_URI:
+        print("Error: DATABASE_URL environment variable is not set.")
+        return
+
     conn = psycopg2.connect(DB_URI)
     cursor = conn.cursor()
     # ... rest of your code
