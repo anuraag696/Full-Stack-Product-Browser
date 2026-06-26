@@ -1,4 +1,5 @@
 import os
+import sys
 import psycopg2
 from psycopg2.extras import execute_values
 import random
@@ -27,14 +28,23 @@ def generate_mock_products(count=200000):
 
 def seed_database():
     products = generate_mock_products(200000)
-    
-    # Direct IPv6 endpoint matching your hotspot, using the transaction port
-    DB_URI = "postgresql://postgres:Anuraag%402004@db.iilajlduyjyeibazlyl.supabase.co:6543/postgres"
-    
-    conn = psycopg2.connect(DB_URI)
+
+    DB_URI = os.getenv("DATABASE_URL")
+    if not DB_URI:
+        print("Error: DATABASE_URL environment variable is not set.", file=sys.stderr)
+        sys.exit(1)
+
+    try:
+        conn = psycopg2.connect(DB_URI)
+    except psycopg2.OperationalError as e:
+        print(f"Error: Failed to connect to database: {e}", file=sys.stderr)
+        sys.exit(1)
+    except psycopg2.Error as e:
+        print(f"Error: Database connection error: {e}", file=sys.stderr)
+        sys.exit(1)
+
     cursor = conn.cursor()
-    # ... rest of your code
-    
+
     # Create table and critical composite indexes if they don't exist
     setup_sql = """
     CREATE TABLE IF NOT EXISTS products (
@@ -48,7 +58,7 @@ def seed_database():
     CREATE INDEX IF NOT EXISTS idx_products_pagination ON products (created_at DESC, id DESC);
     CREATE INDEX IF NOT EXISTS idx_products_category_pagination ON products (category, created_at DESC, id DESC);
     """
-    
+
     try:
         print("Setting up table and indexes...")
         cursor.execute(setup_sql)
@@ -59,9 +69,22 @@ def seed_database():
         execute_values(cursor, query, products, page_size=20000)
         conn.commit()
         print("Database seeded successfully with 200,000 products!")
+    except psycopg2.OperationalError as e:
+        conn.rollback()
+        print(f"Error: Database operation failed (timeout or connection lost): {e}", file=sys.stderr)
+        sys.exit(1)
+    except psycopg2.IntegrityError as e:
+        conn.rollback()
+        print(f"Error: Data integrity violation during seeding: {e}", file=sys.stderr)
+        sys.exit(1)
+    except psycopg2.Error as e:
+        conn.rollback()
+        print(f"Error: Database error during seeding: {e}", file=sys.stderr)
+        sys.exit(1)
     except Exception as e:
         conn.rollback()
-        print(f"Error during seeding: {e}")
+        print(f"Error: Unexpected error during seeding: {e}", file=sys.stderr)
+        sys.exit(1)
     finally:
         cursor.close()
         conn.close()

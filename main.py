@@ -32,8 +32,27 @@ app.add_middleware(
 # Database connection
 def get_db_connection():
     DATABASE_URL = os.getenv("DATABASE_URL")
-    # Adding 'options' disables prepared statements, which are incompatible with the pooler
-    return psycopg2.connect(DATABASE_URL, cursor_factory=RealDictCursor, options="-c statement_timeout=30000")
+    if not DATABASE_URL:
+        logger.error("DATABASE_URL environment variable is not set")
+        raise HTTPException(
+            status_code=500,
+            detail="Server misconfiguration: database connection string not set."
+        )
+    try:
+        # Adding 'options' disables prepared statements, which are incompatible with the pooler
+        return psycopg2.connect(DATABASE_URL, cursor_factory=RealDictCursor, options="-c statement_timeout=30000")
+    except psycopg2.OperationalError as e:
+        logger.error(f"Database connection failed: {e}")
+        raise HTTPException(
+            status_code=503,
+            detail="Database is currently unavailable. Please try again later."
+        )
+    except psycopg2.Error as e:
+        logger.error(f"Unexpected database error during connection: {e}")
+        raise HTTPException(
+            status_code=500,
+            detail="Failed to establish database connection."
+        )
 
 # Pagination helpers
 def encode_cursor(created_at: str, item_id: int) -> str:
@@ -69,11 +88,15 @@ def get_products(
     limit: int = Query(default=20, le=100),
     cursor: Optional[str] = None
 ):
+    conn = None
+    db_cursor = None
     try:
         conn = get_db_connection()
         db_cursor = conn.cursor()
+    except HTTPException:
+        raise
     except Exception as e:
-        logger.error(traceback.format_exc())
+        logger.error(f"Unexpected error acquiring database connection: {traceback.format_exc()}")
         raise HTTPException(status_code=500, detail="Database connection failed.")
     
     params = []
@@ -102,12 +125,23 @@ def get_products(
     try:
         db_cursor.execute(query, params)
         results = db_cursor.fetchall()
-    except Exception as e:
-        logger.error(traceback.format_exc())
+    except psycopg2.OperationalError as e:
+        logger.error(f"Database operational error during query: {e}")
+        raise HTTPException(status_code=503, detail="Database query timed out or connection lost.")
+    except psycopg2.ProgrammingError as e:
+        logger.error(f"Query programming error: {e}")
+        raise HTTPException(status_code=500, detail="Internal query error.")
+    except psycopg2.Error as e:
+        logger.error(f"Database error during query: {e}")
         raise HTTPException(status_code=500, detail="Query failed.")
+    except Exception as e:
+        logger.error(f"Unexpected error during query: {traceback.format_exc()}")
+        raise HTTPException(status_code=500, detail="An unexpected error occurred.")
     finally:
-        db_cursor.close()
-        conn.close()
+        if db_cursor is not None:
+            db_cursor.close()
+        if conn is not None:
+            conn.close()
     
     has_more = len(results) > limit
     paginated_data = results[:limit]
